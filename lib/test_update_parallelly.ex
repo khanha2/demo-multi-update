@@ -98,7 +98,7 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
           multi_key,
           DemoInventory,
           inventories,
-          on_conflict: {:replace, [:quantity]},
+          on_conflict: {:replace, [:id, :quantity]},
           conflict_target: [:sku]
         )
         |> Repo.transaction()
@@ -127,7 +127,7 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
         Repo.insert_all(
           DemoInventory,
           inventories,
-          on_conflict: {:replace, [:quantity]},
+          on_conflict: {:replace, [:id, :quantity]},
           conflict_target: [:sku]
         )
       else
