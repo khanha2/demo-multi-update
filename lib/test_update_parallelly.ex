@@ -6,7 +6,13 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
 
   require Logger
 
-  def perform(inventory_rows, use_transaction, max_random_numbers, query_times) do
+  def perform(
+        inventory_rows,
+        use_transaction,
+        max_random_numbers,
+        query_times,
+        make_errors \\ false
+      ) do
     # truncate inventories table
     Repo.query("TRUNCATE TABLE demo_inventories RESTART IDENTITY RESTRICT;", [])
 
@@ -19,14 +25,29 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
     end)
 
     # Test update parallelly
-    Enum.each(1..query_times, fn _query_time ->
-      random_number = :rand.uniform(max_random_numbers)
-      sku = "P#{random_number}"
+    tasks =
+      Enum.map(1..query_times, fn _query_time ->
+        random_number = :rand.uniform(max_random_numbers)
+        sku = "P#{random_number}"
 
-      Task.start(fn ->
-        increase_inventory(sku, use_transaction)
+        random_action = :rand.uniform(2)
+
+        case random_action do
+          1 ->
+            Task.async(fn ->
+              increase_inventory(sku, use_transaction)
+            end)
+
+          2 ->
+            Task.async(fn ->
+              upsert_inventory(sku, use_transaction, make_errors)
+            end)
+        end
       end)
-    end)
+
+    Task.yield_many(tasks, :infinity)
+
+    :ok
   end
 
   defp increase_inventory(sku, true) do
@@ -62,6 +83,64 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
 
       error ->
         Logger.error("increase inventory for SKU #{sku} unsuccessfully: #{inspect(error)}")
+    end
+  end
+
+  defp upsert_inventory(sku, true, make_errors) do
+    inventories = [%{sku: sku}]
+
+    multi_key = "upsert_sku_#{sku}"
+
+    try do
+      if make_errors do
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert_all(
+          multi_key,
+          DemoInventory,
+          inventories,
+          on_conflict: {:replace, [:quantity]},
+          conflict_target: [:sku]
+        )
+        |> Repo.transaction()
+      else
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert_all(
+          multi_key,
+          DemoInventory,
+          inventories,
+          on_conflict: :nothing,
+          conflict_target: [:sku]
+        )
+        |> Repo.transaction()
+      end
+    rescue
+      error ->
+        Logger.error("upsert inventory for SKU #{sku} unsuccessfully: #{inspect(error)}")
+    end
+  end
+
+  defp upsert_inventory(sku, false, make_errors) do
+    inventories = [%{sku: sku}]
+
+    try do
+      if make_errors do
+        Repo.insert_all(
+          DemoInventory,
+          inventories,
+          on_conflict: {:replace, [:quantity]},
+          conflict_target: [:sku]
+        )
+      else
+        Repo.insert_all(
+          DemoInventory,
+          inventories,
+          on_conflict: :nothing,
+          conflict_target: [:sku]
+        )
+      end
+    rescue
+      error ->
+        Logger.error("upsert inventory for SKU #{sku} unsuccessfully: #{inspect(error)}")
     end
   end
 end
