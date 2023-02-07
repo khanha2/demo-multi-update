@@ -15,6 +15,7 @@ defmodule DemoMultiUpdate.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {DemoMultiUpdate.Application, []},
       extra_applications: [:logger]
     ]
   end

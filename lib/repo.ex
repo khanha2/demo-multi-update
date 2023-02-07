@@ -3,8 +3,6 @@ defmodule DemoMultiUpdate.Repo do
     otp_app: :demo_multi_update,
     adapter: Ecto.Adapters.Postgres
 
-  import Ecto.Query
-
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
