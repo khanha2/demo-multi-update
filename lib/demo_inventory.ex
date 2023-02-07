@@ -2,7 +2,6 @@ defmodule DemoMultiUpdate.DemoInventory do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @schema_prefix :zalora
   schema "demo_inventories" do
     field(:sku, :string)
     field(:quantity, :integer, default: 0)
