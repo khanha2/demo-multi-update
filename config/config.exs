@@ -8,3 +8,5 @@ config :demo_multi_update, DemoMultiUpdate.Repo,
   priv: "priv/repo"
 
 config :demo_multi_update, ecto_repos: [DemoMultiUpdate.Repo]
+
+config :logger, level: :info

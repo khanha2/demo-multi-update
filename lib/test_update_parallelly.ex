@@ -6,7 +6,7 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
 
   require Logger
 
-  def perform(inventory_rows, use_transaction, query_times \\ 100) do
+  def perform(inventory_rows, use_transaction, max_random_numbers, query_times) do
     # truncate inventories table
     Repo.query("TRUNCATE TABLE demo_inventories RESTART IDENTITY RESTRICT;", [])
 
@@ -20,7 +20,7 @@ defmodule DemoMultiUpdate.TestUpdateParallelly do
 
     # Test update parallelly
     Enum.each(1..query_times, fn _query_time ->
-      random_number = :rand.uniform(inventory_rows)
+      random_number = :rand.uniform(max_random_numbers)
       sku = "P#{random_number}"
 
       Task.start(fn ->
